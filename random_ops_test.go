@@ -82,7 +82,6 @@ func TestRandomOps(t *testing.T) {
 		if len(j) != 3 {
 			t.Errorf("Sample(%v) Expected length of 'j' (%v) to be the same as the draw count (3)\n", userid, j)
 		}
-
 	}
 
 	if reflect.DeepEqual(a, b) != false {

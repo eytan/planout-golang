@@ -38,7 +38,7 @@ func hash(in string) uint64 {
 	return z
 }
 
-func generateExperimentId(units interface{}, interpreter *Interpreter) string {
+func generateNameToHash(units interface{}, interpreter *Interpreter) string {
 	unitstr := generateUnitStr(units)
 	var salt string = ""
 	full_salt, exists := interpreter.get("full_salt")
@@ -69,15 +69,15 @@ func getHash(m map[string]interface{}, interpreter *Interpreter, appended_units 
 		interpreter.Inputs["salt"] = parameter_salt.(string)
 	}
 
-	experimentid := generateExperimentId(units, interpreter)
+	name := generateNameToHash(units, interpreter)
 
 	if len(appended_units) > 0 {
 		for i := range appended_units {
-			experimentid = experimentid + "." + appended_units[i]
+			name = name + "." + appended_units[i]
 		}
 	}
 
-	return hash(experimentid)
+	return hash(name)
 }
 
 func getUniform(m map[string]interface{}, interpreter *Interpreter, min, max float64, appended_units ...string) float64 {
@@ -178,11 +178,8 @@ type sample struct{}
 func (s *sample) execute(m map[string]interface{}, interpreter *Interpreter) interface{} {
 	existOrPanic(m, []string{"unit", "choices"}, "Sample")
 	choices := interpreter.evaluate(m["choices"]).([]interface{})
-	nchoices := len(choices)
-	for i := nchoices - 1; i >= 0; i-- {
-		j := int(getHash(m, interpreter) % uint64(i+1))
-		choices[i], choices[j] = choices[j], choices[i]
-	}
-	draws := int(getOrElse(m, "draws", float64(len(choices))).(float64))
-	return choices[:draws]
+	nhash := getHash(m, interpreter)
+	FisherYatesShuffle(choices, nhash)
+	draws, _ := toNumber(getOrElse(m, "draws", len(choices)))
+	return choices[:int(draws)]
 }
